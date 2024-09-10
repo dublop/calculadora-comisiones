@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 //import './App.css'
 
 const BANCOS = {
@@ -15,10 +15,34 @@ const initialData = {
   monto: '',
 }
 
+
+
 function App() {
   const [initialState, setInitialState] = useState(initialData)
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
+  const [paralelo, setParalelo] = useState(0)
+  const [bcv, setBcv] = useState(0)
   const [resultado, setResultado] = useState(false)
   const {banco, monto} = initialState
+
+  useEffect(() => {
+    const apiCall = async() => {
+      try {
+        let res = await fetch('https://pydolarve.org/api/v1/dollar?page=alcambio')
+        let data = await res.json()
+        setParalelo(data.monitors.enparalelovzla.price)
+        setBcv(data.monitors.bcv.price)
+        setDate(data.datetime.date)
+        setTime(data.datetime.time)
+        return data
+      } catch(error){
+        console.error('Error al acceder a la API: ', error)
+      }
+    }
+    
+    apiCall()
+  },[])
 
   const handleForm = (name, value) => {
     setInitialState ((prevState) => {
@@ -29,10 +53,10 @@ function App() {
       })
   }
 
-  const calcularComisionRetiro = (data) => {
+  const calcularComisionRetiro = (data, bcv) => {
     const {banco, monto} = data
-    const comisionCompraMasRetiro = ((parseFloat(monto)*TASA_BCV)*BANCOS[banco].todo).toFixed(2)
-    const comisionDeRetiro = ((parseFloat(monto)*TASA_BCV)*BANCOS[banco].retiro).toFixed(2)
+    const comisionCompraMasRetiro = ((parseFloat(monto)*bcv)*BANCOS[banco].todo).toFixed(2)
+    const comisionDeRetiro = ((parseFloat(monto)*bcv)*BANCOS[banco].retiro).toFixed(2)
     //const cantidadEnBsParaComprar = comisionCompraMasRetiro - comisionDeRetiro
   
     const newData = {
@@ -43,13 +67,20 @@ function App() {
     return setResultado(newData)
   }
 
-  const porcentajeBrechaParaleloBcv = (banco) => {
-    const resultado = ((TASA_PARALELO - (TASA_BCV * BANCOS[banco].todo)) / TASA_PARALELO) * 100
+  const porcentajeBrechaParaleloBcv = (banco, paralelo, bcv) => {
+    const resultado = ((paralelo - (bcv * BANCOS[banco].todo)) / paralelo) * 100
     return resultado.toFixed(2)
   }
 
   return (
     <>
+      <h4>{date} - {time}</h4>
+      <ul>
+        <li>Tasa BCV: {bcv}</li>
+        <li>Tasa Paralelo: {paralelo}</li>
+      </ul>
+      <h3>Brecha BCV - Paralelo: {porcentajeBrechaParaleloBcv(initialState.banco, paralelo, bcv)}%</h3>
+      <hr />
       <h1>Calculadora Comisión Intervención</h1>
       <form onSubmit={e => e.preventDefault()}>
         <p>
@@ -68,7 +99,7 @@ function App() {
         <label htmlFor="monto">Monto a comprar:</label>
         <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
 
-        <button onClick={() => calcularComisionRetiro(initialState)} type='button'>Calcular</button>
+        <button onClick={() => calcularComisionRetiro(initialState, bcv)} type='button'>Calcular</button>
       </form>
 
       <ul>
@@ -82,7 +113,7 @@ function App() {
       ))}
     </ul>
 
-    <h3>Brecha Paralelo - BCV: {porcentajeBrechaParaleloBcv(initialState.banco)}%</h3>
+    
     </>
   )
 }
