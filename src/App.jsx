@@ -2,9 +2,9 @@ import { useState } from 'react'
 //import './App.css'
 
 const BANCOS = {
-  mercantil: 1.035,
-  bancamiga: 1.037,
-  venezuela: 1.043
+  mercantil: {todo: 1.035, retiro: 0.03},
+  bancamiga: {todo: 1.037, retiro: 0.03},
+  venezuela: {todo: 1.043, retiro: 0.038}
 }
 
 const TASA_BCV = 36.63
@@ -31,8 +31,8 @@ function App() {
 
   const calcularComisionRetiro = (data) => {
     const {banco, monto} = data
-    const comisionCompraMasRetiro = ((parseFloat(monto)*TASA_BCV)*BANCOS[banco]).toFixed(2)
-    const comisionDeRetiro = (comisionCompraMasRetiro - (parseFloat(monto)*TASA_BCV)).toFixed(2)
+    const comisionCompraMasRetiro = ((parseFloat(monto)*TASA_BCV)*BANCOS[banco].todo).toFixed(2)
+    const comisionDeRetiro = ((parseFloat(monto)*TASA_BCV)*BANCOS[banco].retiro).toFixed(2)
     //const cantidadEnBsParaComprar = comisionCompraMasRetiro - comisionDeRetiro
   
     const newData = {
@@ -44,7 +44,7 @@ function App() {
   }
 
   const porcentajeBrechaParaleloBcv = (banco) => {
-    const resultado = ((TASA_PARALELO - (TASA_BCV * BANCOS[banco])) / TASA_PARALELO) * 100
+    const resultado = ((TASA_PARALELO - (TASA_BCV * BANCOS[banco].todo)) / TASA_PARALELO) * 100
     return resultado.toFixed(2)
   }
 
