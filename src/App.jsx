@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 //import './App.css'
 
-const BANCOS = {
+const BANCOS_INTERVENCION = {
   mercantil: {todo: 1.035, retiro: 0.03},
   bancamiga: {todo: 1.037, retiro: 0.03},
   venezuela: {todo: 1.043, retiro: 0.038}
 }
-
-const TASA_BCV = 36.63
-const TASA_PARALELO = 44.02
+const BANCOS_MENUDEO = {
+  mercantil: {todo: 1.042, retiro: 0.03},
+  venezuela: {todo: 1.05, retiro: 0.038}
+}
 
 const initialData = {
   banco: 'mercantil',
@@ -19,6 +20,7 @@ const initialData = {
 
 function App() {
   const [initialState, setInitialState] = useState(initialData)
+  const [options, setOptions] = useState('intervencion')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [paralelo, setParalelo] = useState(0)
@@ -53,54 +55,105 @@ function App() {
       })
   }
 
-  const calcularComisionRetiro = (data, bcv) => {
+  const calcularComisionRetiro = (data, bcv, operacion) => {
     const {banco, monto} = data
-    const comisionCompraMasRetiro = ((parseFloat(monto)*bcv)*BANCOS[banco].todo).toFixed(2)
-    const comisionDeRetiro = ((parseFloat(monto)*bcv)*BANCOS[banco].retiro).toFixed(2)
-    //const cantidadEnBsParaComprar = comisionCompraMasRetiro - comisionDeRetiro
+
+    if (banco === '' || monto === '') return
+
+    const bancoCominisionTodo = operacion === 'intervencion' ? BANCOS_INTERVENCION[banco].todo : BANCOS_MENUDEO[banco].todo
+    const bancoCominisionRetiro = operacion === 'intervencion' ? BANCOS_INTERVENCION[banco].retiro : BANCOS_MENUDEO[banco].retiro
+
+    
+    const comisionCompraMasRetiro = ((parseFloat(monto) * bcv) * bancoCominisionTodo).toFixed(2)
+    const comisionDeRetiro = ((parseFloat(monto) * bcv)* bancoCominisionRetiro).toFixed(2)
   
     const newData = {
-      'Comision de retiro': parseFloat(comisionDeRetiro),
-      'Total en bs para comprar y retirar': parseFloat(comisionCompraMasRetiro)
+      'Comision de retiro': comisionDeRetiro,
+      'Total en bs para comprar y retirar': comisionCompraMasRetiro
     }
 
     return setResultado(newData)
   }
 
-  const porcentajeBrechaParaleloBcv = (banco, paralelo, bcv) => {
-    const resultado = ((paralelo - (bcv * BANCOS[banco].todo)) / paralelo) * 100
+  const porcentajeBrechaParaleloBcv = (banco, paralelo, bcv, operacion) => {
+    const bancoOperacion = (operacion === 'intervencion') ? BANCOS_INTERVENCION[banco].todo : BANCOS_MENUDEO[banco].todo
+    const resultado = ((paralelo - (bcv * bancoOperacion)) / paralelo) * 100
     return resultado.toFixed(2)
+  }
+
+  const handleOptions = (option) => {
+    setOptions(option)
+    setInitialState(initialData)
+    setResultado(false)
   }
 
   return (
     <>
-      <h4>{date} - {time}</h4>
-      <ul>
-        <li>Tasa BCV: {bcv}</li>
-        <li>Tasa Paralelo: {paralelo}</li>
-      </ul>
-      <h3>Brecha BCV - Paralelo: {porcentajeBrechaParaleloBcv(initialState.banco, paralelo, bcv)}%</h3>
+      <section className="dolar-data">
+        <h4>{date} - {time}</h4>
+        <ul>
+          <li>Tasa BCV: {bcv}</li>
+          <li>Tasa Paralelo: {paralelo}</li>
+        </ul>
+        <h3>Brecha BCV - Paralelo: {porcentajeBrechaParaleloBcv(initialState.banco, paralelo, bcv, options)}%</h3>
+      </section>
+
       <hr />
-      <h1>Calculadora Comisión Intervención</h1>
-      <form onSubmit={e => e.preventDefault()}>
-        <p>
-          <input type="radio" name="banco" id="mercantil" value="mercantil" checked={banco === 'mercantil'} onChange={e => handleForm(e.target.name, e.target.value)}/>
-          <label htmlFor="mercantil">Banco Mercantil</label>
-        </p>
-        <p>
-          <input type="radio" name="banco" id="venezuela" value="venezuela" checked={banco === 'venezuela'} onChange={e => handleForm(e.target.name, e.target.value)}/>
-          <label htmlFor="venezuela">Banco de Venezuela</label>
-        </p>
-        <p>
-          <input type="radio" name="banco" id="bancamiga" value="bancamiga" checked={banco === 'bancamiga'} onChange={e => handleForm(e.target.name, e.target.value)}/>
-          <label htmlFor="bancamiga">Bancamiga</label>
-        </p>
+      <section className="options">
+        <button onClick={() => handleOptions('intervencion')}>Internción</button>
+        <button onClick={() => handleOptions('menudeo')}>Menudeo</button>
 
-        <label htmlFor="monto">Monto a comprar:</label>
-        <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
+      </section>
 
-        <button onClick={() => calcularComisionRetiro(initialState, bcv)} type='button'>Calcular</button>
-      </form>
+      {
+        options == 'intervencion' 
+        &&
+        <section className="cambio-intervencion">
+          <h2>Calculadora Comisión Intervención</h2>
+          <form onSubmit={e => e.preventDefault()}>
+            <p>
+              <input type="radio" name="banco" id="mercantil" value="mercantil" checked={banco === 'mercantil'} onChange={e => handleForm(e.target.name, e.target.value)}/>
+              <label htmlFor="mercantil">Banco Mercantil</label>
+            </p>
+            <p>
+              <input type="radio" name="banco" id="venezuela" value="venezuela" checked={banco === 'venezuela'} onChange={e => handleForm(e.target.name, e.target.value)}/>
+              <label htmlFor="venezuela">Banco de Venezuela / BNC</label>
+            </p>
+            <p>
+              <input type="radio" name="banco" id="bancamiga" value="bancamiga" checked={banco === 'bancamiga'} onChange={e => handleForm(e.target.name, e.target.value)}/>
+              <label htmlFor="bancamiga">Bancamiga</label>
+            </p>
+
+            <label htmlFor="monto">Monto a comprar:</label>
+            <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
+
+            <button onClick={() => calcularComisionRetiro(initialState, bcv, options)} type='button'>Calcular</button>
+          </form>
+        </section>
+      }
+
+      {
+        options == 'menudeo' 
+        &&
+        <section className="cambio-menudeo">
+          <h2>Calculadora Comisión Menudeo</h2>
+          <form onSubmit={e => e.preventDefault()}>
+            <p>
+              <input type="radio" name="banco" id="mercantil" value="mercantil" checked={banco === 'mercantil'} onChange={e => handleForm(e.target.name, e.target.value)}/>
+              <label htmlFor="mercantil">Banco Mercantil / Bancamiga</label>
+            </p>
+            <p>
+              <input type="radio" name="banco" id="venezuela" value="venezuela" checked={banco === 'venezuela'} onChange={e => handleForm(e.target.name, e.target.value)}/>
+              <label htmlFor="venezuela">Banco de Venezuela / BNC</label>
+            </p>
+
+            <label htmlFor="monto">Monto a comprar:</label>
+            <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
+
+            <button onClick={() => calcularComisionRetiro(initialState, bcv, options)} type='button'>Calcular</button>
+          </form>
+        </section>
+      }
 
       <ul>
       {
@@ -112,7 +165,6 @@ function App() {
         </li>
       ))}
     </ul>
-
     
     </>
   )
