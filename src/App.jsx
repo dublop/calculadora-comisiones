@@ -68,8 +68,9 @@ function App() {
     const comisionDeRetiro = ((parseFloat(monto) * bcv)* bancoCominisionRetiro).toFixed(2)
   
     const newData = {
-      'Comision de retiro': comisionDeRetiro,
-      'Total en bs para comprar y retirar': comisionCompraMasRetiro
+      'Comision de retiro': `Bs. ${comisionDeRetiro}`,
+      'Total en bs para comprar (Sin retiro)': `Bs. ${(comisionCompraMasRetiro - comisionDeRetiro)}`,
+      'Total en bs para comprar y retirar': `Bs. ${comisionCompraMasRetiro}`
     }
 
     return setResultado(newData)
@@ -92,17 +93,16 @@ function App() {
       <section className="dolar-data">
         <h4>{date} - {time}</h4>
         <ul>
-          <li>Tasa BCV: {bcv}</li>
-          <li>Tasa Paralelo: {paralelo}</li>
+          <li>Tasa BCV: Bs. {bcv}</li>
+          <li>Tasa Paralelo: Bs. {paralelo}</li>
         </ul>
         <h3>Brecha BCV - Paralelo: {porcentajeBrechaParaleloBcv(initialState.banco, paralelo, bcv, options)}%</h3>
       </section>
 
       <hr />
       <section className="options">
-        <button onClick={() => handleOptions('intervencion')}>Internción</button>
+        <button onClick={() => handleOptions('intervencion')}>Intervención</button>
         <button onClick={() => handleOptions('menudeo')}>Menudeo</button>
-
       </section>
 
       {
@@ -124,7 +124,7 @@ function App() {
               <label htmlFor="bancamiga">Bancamiga</label>
             </p>
 
-            <label htmlFor="monto">Monto a comprar:</label>
+            <label htmlFor="monto">Monto a comprar (en dolares): </label>
             <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
 
             <button onClick={() => calcularComisionRetiro(initialState, bcv, options)} type='button'>Calcular</button>
@@ -147,7 +147,7 @@ function App() {
               <label htmlFor="venezuela">Banco de Venezuela / BNC</label>
             </p>
 
-            <label htmlFor="monto">Monto a comprar:</label>
+            <label htmlFor="monto">Monto a comprar (en dolares): </label>
             <input type="text" id='monto' name='monto' value={monto} onChange={e => handleForm(e.target.name, e.target.value)}/>
 
             <button onClick={() => calcularComisionRetiro(initialState, bcv, options)} type='button'>Calcular</button>
